@@ -4,8 +4,6 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 // generate random JwtSecret key
 // require('crypto').randomBytes(35).toString("hex");
-const SECRET_KEY =
-  "ee56249fa00b9cce2134cc9efe495db92f44dab02dbe8db6f87e96a8934d708e450dc8";
 
 // for registration
 const signUp = async (req, res) => {
@@ -45,7 +43,7 @@ const signUp = async (req, res) => {
       // Token Generate
       const token = jwt.sign(
         { email: newUser.email, id: newUser._id },
-        SECRET_KEY,
+        process.env.SECRET_KEY,
         {
           expiresIn: maxAge,
         }
@@ -61,18 +59,22 @@ const signUp = async (req, res) => {
       });
     }
   } catch (error) {
-    res.status(500).send({ message: "something went wrong !!" });
+    res
+      .status(500)
+      .send({ message: "something went wrong !!", error: error.toString() });
   }
 };
 
 //  for login
 const signIn = async (req, res) => {
-  const { email, password } = req.body;
-
   try {
+    const { email, password } = req.body;
+
     // checking  user is exists or not
 
-    const existingUser = await userModel.findOne({ email: email });
+    let existingUser = await userModel
+      .findOne({ email: email })
+      .select("+password");
 
     if (!existingUser) {
       return res.status(404).json({ message: "User Not Found" });
@@ -92,19 +94,21 @@ const signIn = async (req, res) => {
     // Token Generate
     const token = jwt.sign(
       { email: existingUser.email, id: existingUser._id },
-      SECRET_KEY,
+      process.env.SECRET_KEY,
       {
         expiresIn: maxAge, // 3 hours in s
       }
     );
 
     // cookie generate
-    // res.cookie("jwt", token, {
-    //   httpOnly: true,
-    //   maxAge: maxAge * 1000, // 3 hours in ms
-    // });
+    res.cookie("token", token, {
+      httpOnly: true,
+      maxAge: maxAge * 1000, // 3 hours in ms
+    });
 
     // console.log(token)
+    delete existingUser.password;
+
     res.status(201).json({ user: existingUser, token: token });
   } catch (error) {
     res.status(400).json({ message: "Something went wrong" });
@@ -113,4 +117,50 @@ const signIn = async (req, res) => {
 
 const updateRole = async (req, res) => {};
 
-module.exports = { signUp, signIn, updateRole };
+const getAllUser = async (req, res) => {
+  try {
+    const users = await userModel.find({});
+
+    res.status(200).json({ message: "Successfully got users !!", data: users });
+  } catch (error) {
+    res.status(500).json({ message: "Error" });
+  }
+};
+
+const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, password } = req.body;
+
+    const existingUser = await userModel.findById(req?.decoded?._id);
+
+    const isPasswordMatch = await bcrypt.compare(
+      existingUser?.password,
+      oldPassword
+    );
+
+    console.log(isPasswordMatch);
+
+    const body = {
+      password: password,
+      confirmPassword: password,
+    };
+
+    const changedPassword = await userModel.findByIdAndUpdate(
+      req.params.id,
+      body,
+      {
+        new: true,
+      }
+    );
+
+    res.status(200).json({
+      message: "Password changed successfully !!",
+      data: changedPassword,
+    });
+  } catch (error) {
+    console.log("error", error);
+    res.status(501).json({ message: "Error while changing password !!" });
+  }
+};
+
+module.exports = { signUp, signIn, updateRole, getAllUser, changePassword };

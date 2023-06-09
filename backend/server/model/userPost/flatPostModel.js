@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const Posts = new mongoose.Schema({
+const FlatPosts = new mongoose.Schema({
   image: { type: String },
   title: { type: String },
   location: { type: String },
@@ -8,11 +8,13 @@ const Posts = new mongoose.Schema({
   parking: { type: Number },
   price: { type: Number },
   hospital: { type: String },
-  schools: { type: String },
+  isFlat: { type: Boolean },
   isVisible: { type: Boolean },
   description: { type: String },
   category: { type: String },
-  facilities: { type: String },
+  schools: { type: String },
+  bhk: { type: String },
+  isVisible: false,
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "users",
@@ -24,4 +26,4 @@ const Posts = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("posts", Posts);
+module.exports = mongoose.model("flats", FlatPosts);
