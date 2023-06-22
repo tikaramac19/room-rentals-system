@@ -32,7 +32,10 @@ const {
   bookFlat,
 } = require("../controller/flatsContainer");
 const { authenticate } = require("../middleware/authenticate");
-const { createRoomInquiry } = require("../controller/inquiryController");
+const {
+  createRoomInquiry,
+  getRoomInquiry,
+} = require("../controller/inquiryController");
 router.get("/", (req, res, next) => {
   res.send("Home Route");
 });
@@ -50,7 +53,7 @@ router.put("/update", updateRole);
 router.get("/users", getAllUser);
 
 // change password
-router.patch("/change-password", changePassword);
+router.patch("/change-password", authenticate, changePassword);
 
 // create post
 router.post(
@@ -81,13 +84,13 @@ router.get("/rooms/:id", getRoomById);
 router.delete("/rooms/:id", deleteRoomById);
 
 // update room for dashboard
-router.patch("/rooms/:id", updateRoomById);
+router.patch("/rooms/:id", authenticate, updateRoomById);
 
 // get individual owner room list
 router.get("/rooms/:id/individual", getIndividualOwnerRoom);
 
 // booked rooom
-router.patch("/rooms/:roomId/booked", bookRoom);
+router.patch("/rooms/:roomId/booked", authenticate, bookRoom);
 
 //Get all flats
 router.get("/flats", getAllFlats);
@@ -99,10 +102,11 @@ router.get("/flats/:id/individual", getIndividualOwnerFlat);
 router.get("/flats/:id", getFlatById);
 router.delete("/flats/:id", deleteFlatById);
 router.patch("/flats/:id", approveFlat);
-router.patch("/flats/:flatId/booked", bookFlat);
+router.patch("/flats/:flatId/booked", authenticate, bookFlat);
 
 //for inquiry
 
-router.post("/room/inquiry", createRoomInquiry);
+router.post("/inquiry", createRoomInquiry);
+router.get("/inquiry/:roomId", getRoomInquiry);
 
 module.exports = router;

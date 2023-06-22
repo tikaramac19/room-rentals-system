@@ -2,8 +2,11 @@ const jwt = require("jsonwebtoken");
 const userModel = require("../model/userModel");
 
 const authenticate = async (req, res, next) => {
-  console.log("request token", req.cookies["token"]);
-  let token = req.cookies["token"];
+  let token;
+
+  if (req.headers["authorization"]) {
+    token = req.headers["authorization"];
+  }
 
   if (!token) {
     res.status(401).json({ message: "Provide token !" });

@@ -96,18 +96,30 @@ const approveFlat = async (req, res) => {
 //get all flats for user
 const getAllFlatsForUsers = async (req, res) => {
   try {
-    const searchValue = req.query.search || "";
+    if (!!req.query.search) {
+      const regexPattern = new RegExp(req.query.search, "i");
 
-    const flats = await FlatPosts.find({
-      isVisible: true,
-      // location: searchValue,
-    })
-      .populate(["userId", "booked"])
-      .sort({ id: 1 });
+      const flats = await FlatPosts.find({
+        isVisible: true,
+        location: { $regex: regexPattern },
+      })
+        .populate(["userId", "booked"])
+        .sort({ id: 1 });
 
-    res
-      .status(200)
-      .json({ message: "Successfully got flats for user !!", data: flats });
+      res
+        .status(200)
+        .json({ message: "Successfully got flats for user !!", data: flats });
+    } else {
+      const flats = await FlatPosts.find({
+        isVisible: true,
+      })
+        .populate(["userId", "booked"])
+        .sort({ id: 1 });
+
+      res
+        .status(200)
+        .json({ message: "Successfully got flats for user !!", data: flats });
+    }
   } catch (error) {
     // console.log("error", error);
     res.status.json()({
@@ -145,18 +157,20 @@ const getIndividualOwnerFlat = async (req, res) => {
   }
 };
 
-// book room
+// book flat
 
 const bookFlat = async (req, res) => {
   try {
     const checkFlat = await FlatPosts.findById(req.params.flatId);
 
-    if (String(req.params.userId) == checkFlat.userId) {
-      res.status(403).json({ message: "You can not book your own flat !!" });
-    }
+    // if (String(req.params.userId) == checkFlat.userId) {
+    //   return res
+    //     .status(403)
+    //     .json({ message: "You can not book your own flat !!" });
+    // }
 
     if (req.decoded.role === "user") {
-      const flats = await RoomPost.findByIdAndUpdate(
+      const flats = await FlatPosts.findByIdAndUpdate(
         req.params.flatId,
         {
           booked: req.decoded._id,
@@ -171,14 +185,17 @@ const bookFlat = async (req, res) => {
 
       await sendMail.sendMail(mailBody);
 
-      res
-        .status(200)
-        .json({ message: "Successfully booked flats !!", data: flats });
+      res.status(200).json({
+        message: "Successfully booked flats !!",
+        data: flats,
+        status: 200,
+      });
     } else {
       res.status(403).json({ message: "Unauthorized user", status: 403 });
     }
   } catch (error) {
-    res.status.json()({
+    console.log(error, "errorhs");
+    res.status(501).json({
       message: "Error while booking flat !!",
       status: 501,
     });

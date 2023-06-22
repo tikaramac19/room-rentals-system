@@ -71,8 +71,6 @@ const deleteRoomById = async (req, res) => {
 
 const updateRoomById = async (req, res) => {
   try {
-    // if (req.params.id) return;
-
     const updatedData = req.body;
     const options = {
       new: true,
@@ -125,13 +123,34 @@ const getIndividualOwnerRoom = async (req, res) => {
 //get all room
 const getAllRoomsForUsers = async (req, res) => {
   try {
-    const rooms = await RoomPost.find({ isVisible: true })
-      .populate(["userId", "booked"])
-      .sort({ id: 1 });
+    if (!!req.query.search) {
+      console.log("search", req.query.search);
 
-    res
-      .status(200)
-      .json({ message: "Successfully got rooms for user !!", data: rooms });
+      const regexPattern = new RegExp(req.query.search, "i");
+
+      const rooms = await RoomPost.find({
+        isVisible: true,
+        location: { $regex: regexPattern },
+      })
+        .populate(["userId", "booked"])
+        .sort({ id: 1 });
+
+      res
+        .status(200)
+        .json({ message: "Successfully got rooms for user !!", data: rooms });
+    } else {
+      console.log("call");
+
+      const rooms = await RoomPost.find({
+        isVisible: true,
+      })
+        .populate(["userId", "booked"])
+        .sort({ id: 1 });
+
+      res
+        .status(200)
+        .json({ message: "Successfully got rooms for user !!", data: rooms });
+    }
   } catch (error) {
     // console.log("error", error);
     res.status.json()({
@@ -167,9 +186,11 @@ const bookRoom = async (req, res) => {
 
       await sendMail.sendMail(mailBody);
 
-      res
-        .status(200)
-        .json({ message: "Successfully booked rooms !!", data: rooms });
+      res.status(200).json({
+        message: "Successfully booked rooms !!",
+        data: rooms,
+        status: 200,
+      });
     } else {
       res.status(403).json({ message: "Unauthorized user", status: 403 });
     }
